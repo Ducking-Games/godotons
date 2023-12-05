@@ -16,8 +16,8 @@ however I am curious to have people try it out and suggest improvements or other
 enhancements / PRs.
 
 <center>
-<img src="static/dock.png", width=350, height=350/>
-<img src="static/integration.png", width=350, height=350/>
+<img src="static/dock.png", width=500, height=500/>
+<img src="static/integration.png", width=500, height=500/>
 </center>
 
 # Usage
