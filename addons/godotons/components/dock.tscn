@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3 uid="uid://c31wpebgw4wc7"]
+
+[ext_resource type="Script" path="res://addons/godotons/components/dock.gd" id="1_t0t61"]
+
+[node name="Godotons" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_t0t61")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Configured Addons"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="VBox/HBoxContainer"]
+layout_mode = 2
+text = "Save"
+
+[node name="Button2" type="Button" parent="VBox/HBoxContainer"]
+layout_mode = 2
+text = "Load
+"
+
+[node name="Button3" type="Button" parent="VBox/HBoxContainer"]
+layout_mode = 2
+text = "Add"
+
+[node name="ItemList" type="ItemList" parent="VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Tree" type="Tree" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+
+[connection signal="pressed" from="VBox/HBoxContainer/Button" to="." method="_save_config"]
+[connection signal="pressed" from="VBox/HBoxContainer/Button2" to="." method="_load_config"]
+[connection signal="pressed" from="VBox/HBoxContainer/Button3" to="." method="_new_addon"]
