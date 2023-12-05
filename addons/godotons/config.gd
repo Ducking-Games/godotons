@@ -8,15 +8,16 @@ var conf: ConfigFile = ConfigFile.new()
 
 var configFile: String = "res://godotons.cfg"	
 
+func Find(section: String) -> AddonConfig:
+	var index: int = Addons.find(section)
+	if index == -1:
+		return null
+	return Addons[index]
+
 func BuildConfig() -> void:
 	conf.clear()
 	for addon in Addons:
-		conf.set_value(addon.Name, "name", addon.Name)
-		conf.set_value(addon.Name, "update", addon.Update)
-		conf.set_value(addon.Name, "repo", addon.Repo)
-		conf.set_value(addon.Name, "branch", addon.Branch)
-		conf.set_value(addon.Name, "upstream_path", addon.UpstreamPath)
-		conf.set_value(addon.Name, "project_path", addon.ProjectPath)
+		conf = addon.Prepare(conf)
 
 func SaveConfig() -> void:
 	BuildConfig()
@@ -28,10 +29,5 @@ func LoadConfig() -> void:
 	Addons = []
 	for section in conf.get_sections():
 		var addon: AddonConfig = AddonConfig.new()
-		addon.Name = section
-		addon.Repo = conf.get_value(section, "repo")
-		addon.Update = conf.get_value(section, "update")
-		addon.Branch = conf.get_value(section, "branch")
-		addon.UpstreamPath = conf.get_value(section, "upstream_path")
-		addon.ProjectPath = conf.get_value(section, "project_path")
+		addon.Unpack(conf, section)
 		Addons.append(addon)
