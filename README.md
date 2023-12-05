@@ -7,7 +7,7 @@ A godot addon in pure GDScript for managing out of band (not in asset-lib) Libra
 You ever have a Godot addon that hasn't made it on to the asset library yet, requires a compatibility branch, 
 or the asset library updates too slowly for you?
 
-Godoton attampts to solve this by maintaining a minimal configuration file from which it
+Godoton attempts to solve this by maintaining a minimal configuration file from which it
 does an Integration/Apply run to download the given repo:branch and then inject the 
 defined path (ex. addon/inkgd) to the local project path (ex. addon/inkgd)
 
@@ -62,6 +62,7 @@ The red X button will delete the addon.
 - [ ] Investigate threading the apply step.
 - [ ] Investigate refreshing on editor reimport
 - [ ] Implement tests
+- [ ] Investigate self-updating addon when in a foreign project (if even detectable)
 - [ ] Investigate supporting private repos
 - [ ] Keep a backup copy of the config's last change to handle mis-deletes etc. Stretch goal: pop confirmation possible?
 - [X] Maintain list of repos / branch to fetch / path in remote repo to copy into addons/
