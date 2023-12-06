@@ -26,16 +26,21 @@ text = "Configured Addons"
 [node name="HBoxContainer" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="VBox/HBoxContainer"]
+[node name="Save" type="Button" parent="VBox/HBoxContainer"]
 layout_mode = 2
 text = "Save"
 
-[node name="Button2" type="Button" parent="VBox/HBoxContainer"]
+[node name="Load" type="Button" parent="VBox/HBoxContainer"]
 layout_mode = 2
 text = "Load
 "
 
-[node name="Button3" type="Button" parent="VBox/HBoxContainer"]
+[node name="LoadBackup" type="Button" parent="VBox/HBoxContainer"]
+layout_mode = 2
+text = "Load from Backup
+"
+
+[node name="Add" type="Button" parent="VBox/HBoxContainer"]
 layout_mode = 2
 text = "Add"
 
@@ -49,6 +54,7 @@ layout_mode = 2
 size_flags_vertical = 3
 columns = 2
 
-[connection signal="pressed" from="VBox/HBoxContainer/Button" to="." method="_save_config"]
-[connection signal="pressed" from="VBox/HBoxContainer/Button2" to="." method="_load_config"]
-[connection signal="pressed" from="VBox/HBoxContainer/Button3" to="." method="_new_addon"]
+[connection signal="pressed" from="VBox/HBoxContainer/Save" to="." method="_save_config"]
+[connection signal="pressed" from="VBox/HBoxContainer/Load" to="." method="_load_config"]
+[connection signal="pressed" from="VBox/HBoxContainer/LoadBackup" to="." method="_load_backup_config"]
+[connection signal="pressed" from="VBox/HBoxContainer/Add" to="." method="_new_addon"]
