@@ -10,24 +10,24 @@ var config: AddonManifest = AddonManifest.new()
 @onready var integrate: Texture2D = preload("res://addons/godotons/integrate.png")
 
 func _success(message: String) -> void:
-	print_rich("[color=green]%s[/color]" % [message])
+	print_rich("[godotons] [color=green]%s[/color]" % [message])
 
 func _successi(message: String) -> void:
 	_success("    %s" % [message])
 	
 
 func _info(message: String) -> void:
-	print_rich("[color=cyan]%s[/color]" % [message])
+	print_rich("[godotons] [color=cyan]%s[/color]" % [message])
 
 func _infoi(message: String) -> void:
 	_info("    %s" % [message])
 
 func _note(message: String) -> void:
-	print_rich("[color=orange]%s[/color]" % [message])
+	print_rich("[godotons] [color=orange]%s[/color]" % [message])
 
 func _error(message: String, err: Error) -> void:
 	push_error(error_string(err))
-	print_rich("[color=red]%s: %d (%s)" % [message, err, error_string(err)])
+	print_rich("[godotons] [color=red]%s: %d (%s)" % [message, err, error_string(err)])
 
 func _enter_tree() -> void:
 	Engine.register_singleton("Godotons", self)
@@ -39,7 +39,11 @@ func _ready() -> void:
 	_load_config()
 	tree.item_edited.connect(_tree_edited)
 	tree.button_clicked.connect(_tree_clicked)
+	EditorInterface.get_resource_filesystem().sources_changed.connect(_editor_reload)
 	pass
+
+func _editor_reload(exist: bool) -> void:
+	_load_config()
 
 func _save_config() -> void:
 	_info("Saving config...")
