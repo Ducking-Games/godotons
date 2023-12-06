@@ -36,6 +36,7 @@ func _exit_tree() -> void:
 	Engine.unregister_singleton("Godotons")
 
 func _ready() -> void:
+	_load_config()
 	tree.item_edited.connect(_tree_edited)
 	tree.button_clicked.connect(_tree_clicked)
 	pass
@@ -103,11 +104,11 @@ func _tree_edited() -> void:
 
 func _tree_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
 	_info("%d" % id)
+	var idx: int = item.get_meta("index", -1) as int
 	match id:
 		AddonConfig.TREE_BUTTONS.APPLY_ALL:
 			_integrate()
 		AddonConfig.TREE_BUTTONS.APPLY_ONE:
-			var idx: int = item.get_meta("index", -1) as int
 			if idx == -1:
 				push_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()])
 				_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
@@ -116,7 +117,15 @@ func _tree_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int
 			_info("Run integration on one addon: %s" % [addon.Name])
 			_integrate_one(addon, true)
 		AddonConfig.TREE_BUTTONS.DELETE_ONE:
-			_info("Delete one addon")
+			if idx == -1:
+				push_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()])
+				_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
+				return
+			var addon: AddonConfig = config.Addons[idx]
+			_info("Removing %s from configuration" % [ addon.Name ])
+			config.Addons.remove_at(idx)
+			_save_config()
+			
 
 func _new_addon() -> void:
 	config.New()
