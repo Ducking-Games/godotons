@@ -26,7 +26,7 @@ enhancements / PRs.
 
 Enable the plugin and then use the Godotons Dock to add remote sources.
 
-> :warning: **Save/Load are vestigal**: Save and Load currently still work however the addon now auto saves after every change like ProjectSettings so they are largely vestigal in nature (haven't decided which way to go yet)
+> :warning: **Save/Load are vestigal**: Save and Load currently still work however the addon now auto saves after every change like ProjectSettings. There is active work going on with save/load to improve it.
 
 * Addon Settings
     * Name
@@ -80,7 +80,6 @@ The red X button will delete the addon.
 * Notes
     * Save/Load behavior may change
 * Known Issues
-    * Currently isn't deleting the zip archive files from user:// for some reason. Investigation is on going (TODO: write an issue and put it here)
     * Won't gracefully handle config schema changes. Need to implement some schema version or something to prevent it blowning up on Godoton addon updates.
     * Won't refresh on reimport, have to hit Load
 
