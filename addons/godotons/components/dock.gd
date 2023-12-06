@@ -185,9 +185,12 @@ func _integrate_one(addon: AddonConfig, single: bool) -> Error:
 
 	_info("Integrating addon: %s" % [addon.Name])
 
+	
 	var download_name: String = "%s-%s" % [addon.Name, addon.Branch]
 	var download_url: String = "%s/archive/%s.zip" % [addon.Repo, addon.Branch]
 	var archive_name: String = "%s.zip" % [download_name]
+	var repo_name: String = addon.Repo.rsplit("/", true, 1)[1]
+	var internal_zip_prefix: String = "%s-%s" % [repo_name, addon.Branch]
 	var archive_path: String = "%s/%s" % [tmp_dir, archive_name]
 
 	if !resources.file_exists(archive_path):
@@ -210,7 +213,7 @@ func _integrate_one(addon: AddonConfig, single: bool) -> Error:
 	for archived_file: String in zip_reader.get_files():
 		if archived_file.contains(addon.UpstreamPath):
 
-			var internal_path: String = archived_file.trim_prefix(download_name).trim_prefix("/")
+			var internal_path: String = archived_file.trim_prefix(internal_zip_prefix).trim_prefix("/")
 			var diff_path: String = internal_path.trim_prefix(addon.UpstreamPath).trim_prefix("/")
 			var resource_path: String = "res://%s/%s" % [addon.ProjectPath, diff_path]
 
