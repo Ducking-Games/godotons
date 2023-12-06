@@ -76,6 +76,9 @@ Enable the plugin and then use the Godotons Dock to add remote sources.
         * Changed by clicking the label beside the dropdown chevron
         * Only used in editor messaging and as storage key
         * No spaces (automatically replaced with underscores)
+    * Enabled on Apply
+        * Whether or not to skip the addon entirely during a run
+        * Use to disable an addon in Godotons without removing it from the config
     * Update on Apply
         * Whether or not to download and inject if the directory already exists
     * Repo
