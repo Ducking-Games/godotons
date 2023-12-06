@@ -46,6 +46,7 @@ func _save_config() -> void:
 	if save_err != OK:
 		_error("Failed to save config", save_err)
 		return
+	_build_tree()
 	_success("Saved config!")
 
 func _save_backup_config() -> void:
@@ -79,7 +80,7 @@ func _tree_edited() -> void:
 	var addons: Array[AddonConfig] = []
 	for item in root_item:
 		var addon: AddonConfig = AddonConfig.new()
-		addon.Name = item.get_text(0)
+		addon.Name = item.get_text(0).replace(" ", "_")
 
 		for child in item.get_children():
 			var child_label: String = child.get_text(0)
@@ -106,7 +107,7 @@ func _tree_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int
 		AddonConfig.TREE_BUTTONS.APPLY_ALL:
 			_integrate()
 		AddonConfig.TREE_BUTTONS.APPLY_ONE:
-			var idx: int = item.get_meta("index", -1)
+			var idx: int = item.get_meta("index", -1) as int
 			if idx == -1:
 				push_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()])
 				_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
@@ -200,6 +201,7 @@ func _integrate_one(addon: AddonConfig, single: bool) -> Error:
 	var zip_err: Error = zip_reader.open(archive_path)
 	if zip_err != OK:
 		_error("Failed to unpack %s.", zip_err)
+		zip_reader.close()
 		return zip_err
 	
 	var wrote_directory_count: int = 0
@@ -217,6 +219,7 @@ func _integrate_one(addon: AddonConfig, single: bool) -> Error:
 				var mkdir_err: Error = resources.make_dir_recursive(resource_path)
 				if mkdir_err != OK:
 					_error("Failed to create addon dir: %s" % [resource_path], mkdir_err)
+					zip_reader.close()
 					return mkdir_err
 				wrote_directory_count += 1
 				continue
@@ -226,13 +229,11 @@ func _integrate_one(addon: AddonConfig, single: bool) -> Error:
 			writer.close()
 			wrote_file_count += 1
 
+	zip_reader.close()
 	_infoi("Wrote %d directories & %d files." % [wrote_directory_count, wrote_file_count])
 
 	if single:
-		_infoi("Cleaning up res://%s..." % [tmp_dir])
-		var clean_err: Error = resources.remove(tmp_dir)
-		if clean_err != OK:
-			_error("Failed to remove temp directory", clean_err)
+		_clean()
 
 	_success("Done: %s" % [addon.Name])
 	return OK
@@ -242,15 +243,24 @@ func _integrate() -> void:
 	_info("Beginning integration run with %d addons" % [config.Addons.size()])
 
 	for addon in config.Addons:
-		_integrate_one(addon, false)
+		await _integrate_one(addon, false)
 
+	_clean()
+
+	_success("Done with integration run.")
+
+func _clean() -> void:
 	_note("Cleaning up res://%s..." % [tmp_dir])
+	var temp_addons: DirAccess = DirAccess.open(tmp_dir)
+	for file in temp_addons.get_files():
+		var rem_err: Error = temp_addons.remove(file)
+		if rem_err != OK:
+			_error("Failed to remove temp file %s" % [file], rem_err)
+
 	var resources: DirAccess = DirAccess.open("res://")
 	var clean_err: Error = resources.remove(tmp_dir)
 	if clean_err != OK:
 		_error("Failed to remove temp directory", clean_err)
-
-	_success("Done with integration run.")
 
 func _trim_zip_path_root(path: String) -> String:
 	var split: Array[String] = path.split("/")

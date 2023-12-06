@@ -11,14 +11,15 @@ Godoton attempts to solve this by maintaining a minimal configuration file from 
 does an Integration/Apply run to download the given repo:branch and then inject the 
 defined path (ex. addon/inkgd) to the local project path (ex. addon/inkgd)
 
-This project is *very* new and in no way considered stable or ready for production,
+This project is *very* new and in no way consideredv stable or ready for production,
 however I am curious to have people try it out and suggest improvements or other
 enhancements / PRs.
 
 <p align="center">
-<img src="static/dock.png" width=500 height=500/>
-<img src="static/integration.png" width=500 height=500/>
+<img src="static/editor_dock.png" width=200 height=500/>
+<img src="static/integration2.png" width=500 />
 </p>
+
 
 
 # Usage
@@ -31,6 +32,7 @@ Enable the plugin and then use the Godotons Dock to add remote sources.
     * Name
         * Changed by clicking the label beside the dropdown chevron
         * Only used in editor messaging and as storage key
+        * No spaces (automatically replaced with underscores)
     * Update on Apply
         * Whether or not to download and inject if the directory already exists
     * Repo
@@ -51,14 +53,16 @@ Enable the plugin and then use the Godotons Dock to add remote sources.
 
 The green PLAY button applies the addon configuration. This will download the addon repo branch, extract only the UpstreamPath and then copy it to the ProjectPath.
 
+Individual addons can be run, or the entire suite can be run.
+
 The red X button will delete the addon.
 
 # Planned Features
 
-- [ ] Clean up and handle errors/messaging better for Asset Store release
+- [X] Clean up and handle errors/messaging better for Asset Store release
 - [ ] Compare local hash with repo somehow before downloading to save on API requests / data transfer
 - [ ] Ignore option to skip an addon for apply runs
-- [ ] Ability to apply single addon or all addons
+- [X] Ability to apply single addon or all addons
 - [ ] Investigate threading the apply step.
 - [ ] Investigate refreshing on editor reimport
 - [ ] Implement tests
