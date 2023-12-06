@@ -11,7 +11,7 @@ Godoton attempts to solve this by maintaining a minimal configuration file from 
 does an Integration/Apply run to download the given repo:branch and then inject the 
 defined path (ex. addon/inkgd) to the local project path (ex. addon/inkgd)
 
-This project is *very* new and in no way consideredv stable or ready for production,
+This project is *very* new and in no way considered stable or ready for production,
 however I am curious to have people try it out and suggest improvements or other
 enhancements / PRs.
 
@@ -20,6 +20,49 @@ enhancements / PRs.
 <img src="static/integration2.png" width=500 />
 </p>
 
+# Installation
+
+### Install
+
+Download Godotons whichever way you prefer and install the addons/godotons into your project
+
+(Hopefully will be on the asset library at some point for initial install!)
+
+Linux example
+```bash
+wget https://github.com/Ducking-Games/godotons/archive/refs/heads/main.zip
+mkdir addons
+unzip main.zip
+mv godotons-main/addons/godotons addons
+rm -rf main.zip godotons-main/
+```
+
+Enable the addon and never manually install or update an addon again (hopefully)
+
+### (Optional) Add Godotons to manage its own updates
+```ini
+[godotons]
+
+name="godotons"
+update=true
+repo="https://github.com/Ducking-Games/godotons"
+branch="main"
+upstream_path="addons/godotons"
+project_path="addons/godotons"
+```
+
+```
+Run integration on one addon: godotons
+Integrating addon: godotons
+    Awaiting https://github.com/Ducking-Games/godotons/archive/main.zip...
+    Fetched godotons-main.zip. Writing...
+    Injecting addon [addons/godotons -> addons/godotons]
+    Creating res://addons/godotons/
+    Creating res://addons/godotons/components/
+    Wrote 2 directories & 10 files.
+Cleaning up res://addons/temp/...
+Done: godotons
+```
 
 
 # Usage
@@ -82,6 +125,7 @@ The red X button will delete the addon.
 * Known Issues
     * Won't gracefully handle config schema changes. Need to implement some schema version or something to prevent it blowning up on Godoton addon updates.
     * Won't refresh on reimport, have to hit Load
+    * Doesn't clear out the addon or move it before an update - need to address
 
 # Contributing
 We are open to contributions with no particular style guide defined yet as the project is in early development.
