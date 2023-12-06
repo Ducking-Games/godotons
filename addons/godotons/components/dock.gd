@@ -47,7 +47,7 @@ func _save_config() -> void:
 	if save_err != OK:
 		_error("Failed to save config", save_err)
 		return
-	_build_tree()
+	call_deferred("_build_tree")
 	_success("Saved config!")
 
 func _save_backup_config() -> void:
@@ -64,7 +64,7 @@ func _load_config() -> void:
 	if config.Addons.size() == 0:
 		_error("No addons loaded. Config empty or load errored. Check pushed errors.", 0)
 		return
-	_build_tree()
+	call_deferred("_build_tree")
 	_info("Loaded!")
 
 func _load_backup_config() -> void:
@@ -73,7 +73,7 @@ func _load_backup_config() -> void:
 	if config.Addons.size() == 0:
 		_error("No addons loaded. Config empty or load errored. Check pushed errors.", 0)
 		return
-	_build_tree()
+	call_deferred("_build_tree")
 	_info("Loaded!")
 
 func _tree_edited() -> void:
@@ -88,6 +88,8 @@ func _tree_edited() -> void:
 			match child_label:
 				"Repo":
 					addon.Repo = child.get_text(1)
+				"Enabled on Apply":
+					addon.Enabled = child.is_checked(1)
 				"Update on Apply":
 					addon.Update = child.is_checked(1)
 				"Branch":
@@ -125,11 +127,11 @@ func _tree_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int
 			_info("Removing %s from configuration" % [ addon.Name ])
 			config.Addons.remove_at(idx)
 			_save_config()
-			
+
 
 func _new_addon() -> void:
 	config.New()
-	_build_tree()
+	call_deferred("_build_tree")
 
 func _build_tree() -> void:
 	tree.clear()
@@ -181,6 +183,10 @@ func _fetch_addon(url: String, name: String, filepath: String) -> Error:
 
 
 func _integrate_one(addon: AddonConfig, single: bool) -> Error:
+	if !addon.Enabled:
+		_note("Ignoring %s (disabled)" % [addon.Name])
+		return OK
+
 	var resources: DirAccess = DirAccess.open("res://")
 	var tmp_err: Error = resources.make_dir_recursive(tmp_dir)
 	if tmp_err != OK:
@@ -258,6 +264,7 @@ func _integrate() -> void:
 		await _integrate_one(addon, false)
 
 	_clean()
+	_save_backup_config()
 
 	_success("Done with integration run.")
 

@@ -5,6 +5,7 @@ class_name AddonConfig
 enum TREE_BUTTONS { APPLY_ALL = 1000, APPLY_ONE, DELETE_ONE, UOA_ONE }
 
 @export var Name: String
+@export var Enabled: bool
 @export var Update: bool
 @export var Repo: String
 @export var Branch: String
@@ -15,6 +16,7 @@ enum TREE_BUTTONS { APPLY_ALL = 1000, APPLY_ONE, DELETE_ONE, UOA_ONE }
 ## Prepare packs this addon configuraiton into a config section for writing
 func Prepare(conf: ConfigFile) -> ConfigFile:
 	conf.set_value(Name, "name", Name)
+	conf.set_value(Name, "enabled", Enabled)
 	conf.set_value(Name, "update", Update)
 	conf.set_value(Name, "repo", Repo)
 	conf.set_value(Name, "branch", Branch)
@@ -26,7 +28,8 @@ func Prepare(conf: ConfigFile) -> ConfigFile:
 ## Unpack creates a new AddonConfig and populates it from the given conf
 func LoadFrom(conf: ConfigFile, section: String) -> void:
 	Name = section
-	Update = conf.get_value(section, "update")
+	Enabled = conf.get_value(section, "enabled", true)
+	Update = conf.get_value(section, "update", true)
 	Repo = conf.get_value(section, "repo")
 	Branch = conf.get_value(section, "branch")
 	UpstreamPath = conf.get_value(section, "upstream_path")
@@ -41,6 +44,14 @@ func TreeBranch(tree: Tree, root: TreeItem, tree_index: int, removeIcon: Texture
 	addon_root.set_editable(0, true)
 	addon_root.set_meta("name", Name)
 	addon_root.set_meta("index", tree_index)
+
+	var addon_enabled := tree.create_item(addon_root)
+	addon_enabled.set_text(0, "Enabled on Apply")
+	addon_enabled.add_button(1, PlaceholderTexture2D.new(), TREE_BUTTONS.UOA_ONE, false, "Uncheck to skip addon entirely during apply runs.")
+	addon_enabled.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+	addon_enabled.set_editable(1, true)
+	addon_enabled.set_checked(1, Enabled)
+	addon_enabled.set_meta("index", tree_index)
 
 	var addon_update := tree.create_item(addon_root)
 	addon_update.set_text(0, "Update on Apply")
