@@ -76,7 +76,8 @@ func _tree_edited() -> void:
 		var addon: AddonConfig = AddonConfig.new()
 		addon.Name = item.get_text(0).replace(" ", "_").replace("'", "_")
 		var old_addon: AddonConfig = config.GetByName(addon.Name)
-		addon.LastInjectedGitHash = old_addon.LastInjectedGitHash
+		if old_addon != null:
+			addon.LastInjectedGitHash = old_addon.LastInjectedGitHash
 		addon.Hidden = item.collapsed
 
 		for child in item.get_children():
