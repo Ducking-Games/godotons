@@ -25,14 +25,10 @@ func _ready() -> void:
 	tree.item_edited.connect(_tree_edited)
 	tree.button_clicked.connect(_tree_clicked)
 	tree.item_collapsed.connect(_tree_collapsed)
-	#EditorInterface.get_resource_filesystem().sources_changed.connect(_on_sources_changed)
 
 func _on_resources_reloaded(resources: PackedStringArray) -> void:
 	if resources.has(AddonManifest.config_file):
 		_load_config()
-
-func _on_sources_changed(exist: bool) -> void:
-	_load_config()
 
 func _save_config() -> void:
 	config_lock.lock()
