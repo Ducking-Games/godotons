@@ -28,6 +28,23 @@ func RepoName() -> String:
 		return ""
 	return split[1]
 
+func Stringify() -> String:
+	var to_join: Array[String] = [
+		"Name: %s\n" % [Name],
+		"Enabled: %s\n" % [Enabled],
+		"Update: %s\n" % [Update],
+		"Origin: %s\n" % [Origin],
+		"OriginOverride: %s\n" % [OriginOverride],
+		"Repo: %s\n" % [Repo],
+		"Branch: %s\n" % [Branch],
+		"UpstreamPath: %s\n" % [UpstreamPath],
+		"ProjectPath: %s\n" % [ProjectPath],
+		"LastInjectedGitHash: %s\n" % [LastInjectedGitHash],
+		"Hidden: %s\n" % [Hidden]
+	]
+
+	return "".join(to_join)
+
 ## Prepare packs this addon configuraiton into a config section for writing
 func Prepare(conf: ConfigFile) -> ConfigFile:
 	conf.set_value(Name, "name", Name)
@@ -40,6 +57,7 @@ func Prepare(conf: ConfigFile) -> ConfigFile:
 	conf.set_value(Name, "branch", Branch)
 	conf.set_value(Name, "upstream_path", UpstreamPath)
 	conf.set_value(Name, "project_path", ProjectPath)
+	conf.set_value(Name, "last_git_hash", LastInjectedGitHash)
 
 	return conf
 
@@ -55,6 +73,7 @@ func LoadFrom(conf: ConfigFile, section: String) -> void:
 	Branch = conf.get_value(section, "branch", "main")
 	UpstreamPath = conf.get_value(section, "upstream_path", "")
 	ProjectPath = conf.get_value(section, "project_path", "")
+	LastInjectedGitHash = conf.get_value(section, "last_git_hash", "")
 
 ## Branch provides a TreeItem for rendering in the dock
 func TreeBranch(tree: Tree, root: TreeItem, tree_index: int, removeIcon: Texture2D, integrateIcon: Texture2D, pauseIcon: Texture2D) -> TreeItem:
@@ -82,7 +101,6 @@ func TreeBranch(tree: Tree, root: TreeItem, tree_index: int, removeIcon: Texture
 	addon_origin.set_text(0, "Origin")
 	addon_origin.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 	addon_origin.set_custom_color(0, Color.DIM_GRAY if !Enabled else Color.WHITE)
-	#addon_origin.set_range(1, AddonManifest.UpstreamIndex(Origin))
 	addon_origin.set_range(1, GitDownloader.upstream_index(Name))
 	addon_origin.set_tooltip_text(1, "The upstream origin provider the addon is hosted on. Determines API/URLs used")
 	addon_origin.set_editable(1, true)

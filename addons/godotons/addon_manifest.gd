@@ -32,6 +32,15 @@ func GetByName(name: String) -> AddonConfig:
 			return addon
 	return null
 
+## IndexByName returns the addon index with the name if exists
+func IndexByName(name: String) -> int:
+	var index: int = -1
+	for addon in Addons:
+		index += 1
+		if addon.Name == name:
+			return index
+	return -1
+	
 ## Build assembles the Array[AddonConfig] into a ConfigFile
 func Build() -> ConfigFile:
 	var current: ConfigFile = ConfigFile.new()
