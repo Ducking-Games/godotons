@@ -16,8 +16,8 @@ however I am curious to have people try it out and suggest improvements or other
 enhancements / PRs.
 
 <p align="center">
-<img src="static/editor_dock.png" width=200 height=500/>
-<img src="static/integration2.png" width=500 />
+<img src="static/editor_dock_020.png" width=400 height=500/>
+<img src="static/integration_020.png" width=500 />
 </p>
 
 # Installation
@@ -44,13 +44,17 @@ Enable the addon and never manually install or update an addon again (hopefully)
 [godotons]
 
 name="godotons"
+hidden=false
+enabled=true
 update=true
-repo="https://github.com/Ducking-Games/godotons"
+origin="github"
+origin_override=""
+repo="Ducking-Games/godotons"
 branch="main"
 upstream_path="addons/godotons"
 project_path="addons/godotons"
 ```
-
+TODO: Update below from 0.1.0 to 0.20 output
 ```
 Run integration on one addon: godotons
 Integrating addon: godotons
@@ -76,15 +80,19 @@ Enable the plugin and then use the Godotons Dock to add remote sources.
         * Changed by clicking the label beside the dropdown chevron
         * Only used in editor messaging and as storage key
         * No spaces (automatically replaced with underscores)
+    * Enabled on Apply
+        * Whether or not to skip the addon entirely during a run
+        * Toggled via the Power button on the addon
+        * Use to disable an addon in Godotons without removing it from the config
     * Update on Apply
         * Whether or not to download and inject if the directory already exists
     * Repo
         * The remote git repo from which to inject (only tested against github public repos)
-        * http(s):// required
+        * in the form of owner/repo (ex. `Ducking-Games/godotons`)
     * Branch
         * The remote branch to fetch when downloading the archive to inject
-        * Default: `main`
         * Many addons have compatibility branches (ex. godot4)
+        * If unsure use `main` or `master` (depending on the source)
     * Upstream Path
         * The path on the remote repo to inject
         * Example: `addons/inkgd`
@@ -104,14 +112,14 @@ The red X button will delete the addon.
 
 - [X] Clean up and handle errors/messaging better for Asset Store release
 - [ ] Compare local hash with repo somehow before downloading to save on API requests / data transfer
-- [ ] Ignore option to skip an addon for apply runs
+- [X] Ignore option to skip an addon for apply runs
 - [X] Ability to apply single addon or all addons
 - [ ] Investigate threading the apply step.
-- [ ] Investigate refreshing on editor reimport
+- [X] Investigate refreshing on editor reimport
 - [ ] Implement tests
 - [ ] Investigate self-updating addon when in a foreign project (if even detectable)
 - [ ] Investigate supporting private repos
-- [ ] Keep a backup copy of the config's last change to handle mis-deletes etc. Stretch goal: pop confirmation possible?
+- [X] Keep a backup copy of the config's last applied configuration
 - [X] Maintain list of repos / branch to fetch / path in remote repo to copy into addons/
 - [X] Download repo from remote host (via /archive URI)
 - [X] Inject only the specified UpstreamPath from the repo into the specified ProjectPath (ex. addons/inkgd -> addons/inkgd)
@@ -124,8 +132,6 @@ The red X button will delete the addon.
     * Save/Load behavior may change
 * Known Issues
     * Won't gracefully handle config schema changes. Need to implement some schema version or something to prevent it blowning up on Godoton addon updates.
-    * Won't refresh on reimport, have to hit Load
-    * Doesn't clear out the addon or move it before an update - need to address
 
 # Contributing
 We are open to contributions with no particular style guide defined yet as the project is in early development.

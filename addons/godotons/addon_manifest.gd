@@ -27,11 +27,20 @@ func GetAvailableName() -> String:
 
 ## GetByName returns the addon with name name if exists
 func GetByName(name: String) -> AddonConfig:
-	var index: int = Addons.find(name)
-	if index == -1:
-		return null
-	return Addons[index]
+	for addon in Addons:
+		if addon.Name == name:
+			return addon
+	return null
 
+## IndexByName returns the addon index with the name if exists
+func IndexByName(name: String) -> int:
+	var index: int = -1
+	for addon in Addons:
+		index += 1
+		if addon.Name == name:
+			return index
+	return -1
+	
 ## Build assembles the Array[AddonConfig] into a ConfigFile
 func Build() -> ConfigFile:
 	var current: ConfigFile = ConfigFile.new()

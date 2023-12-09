@@ -1,33 +1,17 @@
 @tool
 extends Control
 
-const tmp_dir: String = "addons/temp/"
+const tmp_dir: String = "addons/tmp-addons/"
 
 var config: AddonManifest = AddonManifest.new()
 
 @onready var tree: Tree = get_node("VBox/Tree")
 @onready var remove: Texture2D = preload("res://addons/godotons/remove.png")
 @onready var integrate: Texture2D = preload("res://addons/godotons/integrate.png")
+@onready var pause_icon: Texture2D = preload("res://addons/godotons/pause.png")
 
-func _success(message: String) -> void:
-	print_rich("[color=green]%s[/color]" % [message])
-
-func _successi(message: String) -> void:
-	_success("    %s" % [message])
-	
-
-func _info(message: String) -> void:
-	print_rich("[color=cyan]%s[/color]" % [message])
-
-func _infoi(message: String) -> void:
-	_info("    %s" % [message])
-
-func _note(message: String) -> void:
-	print_rich("[color=orange]%s[/color]" % [message])
-
-func _error(message: String, err: Error) -> void:
-	push_error(error_string(err))
-	print_rich("[color=red]%s: %d (%s)" % [message, err, error_string(err)])
+var config_lock: Mutex = Mutex.new()
+var run_lock: Mutex = Mutex.new()
 
 func _enter_tree() -> void:
 	Engine.register_singleton("Godotons", self)
@@ -36,51 +20,64 @@ func _exit_tree() -> void:
 	Engine.unregister_singleton("Godotons")
 
 func _ready() -> void:
+	_load_config()
+
 	tree.item_edited.connect(_tree_edited)
 	tree.button_clicked.connect(_tree_clicked)
-	pass
+	tree.item_collapsed.connect(_tree_collapsed)
+
+func _on_resources_reloaded(resources: PackedStringArray) -> void:
+	if resources.has(AddonManifest.config_file):
+		_load_config()
 
 func _save_config() -> void:
-	_info("Saving config...")
+	config_lock.lock()
+	Logs._dminor("Saving godotons config...")
 	var save_err: Error = config.Save()
 	if save_err != OK:
-		_error("Failed to save config", save_err)
+		Logs._error("Failed to save config", save_err)
 		return
-	_build_tree()
-	_success("Saved config!")
+	call_deferred("_build_tree")
+	config_lock.unlock()
 
 func _save_backup_config() -> void:
-	_info("Saving backup...")
+	config_lock.lock()
+	Logs._dminor("Saving backup godotons config...")
 	var save_err: Error = config.Save(true)
 	if save_err != OK:
-		_error("Failed to save backup", save_err)
+		Logs._error("Failed to save backup", save_err)
 		return
-	_success("Saved backup!")
+	config_lock.unlock()
 
 func _load_config() -> void:
-	_info("Loading config from disk...")
+	config_lock.lock()
+	Logs._dminor("Loading config from disk...")
 	config.LoadFromDisk()
 	if config.Addons.size() == 0:
-		_error("No addons loaded. Config empty or load errored. Check pushed errors.", 0)
+		Logs._error("No addons loaded. Config empty or load errored. Check pushed errors.", 0)
 		return
-	_build_tree()
-	_info("Loaded!")
+	call_deferred("_build_tree")
+	config_lock.unlock()
 
 func _load_backup_config() -> void:
-	_info("Loading config from backup file...")
+	config_lock.lock()
+	Logs._dminor("Loading config from backup file...")
 	config.LoadFromDisk(true)
 	if config.Addons.size() == 0:
-		_error("No addons loaded. Config empty or load errored. Check pushed errors.", 0)
+		Logs._error("No addons loaded. Config empty or load errored. Check pushed errors.", 0)
 		return
-	_build_tree()
-	_info("Loaded!")
+	call_deferred("_build_tree")
+	config_lock.unlock()
 
 func _tree_edited() -> void:
 	var root_item: Array[TreeItem] = tree.get_root().get_children()
 	var addons: Array[AddonConfig] = []
 	for item in root_item:
 		var addon: AddonConfig = AddonConfig.new()
-		addon.Name = item.get_text(0).replace(" ", "_")
+		addon.Name = item.get_text(0).replace(" ", "_").replace("'", "_")
+		var old_addon: AddonConfig = config.GetByName(addon.Name)
+		addon.LastInjectedGitHash = old_addon.LastInjectedGitHash
+		addon.Hidden = item.collapsed
 
 		for child in item.get_children():
 			var child_label: String = child.get_text(0)
@@ -89,38 +86,69 @@ func _tree_edited() -> void:
 					addon.Repo = child.get_text(1)
 				"Update on Apply":
 					addon.Update = child.is_checked(1)
+				"Origin":
+					addon.Origin = GitDownloader.upstream_name(child.get_range(1))
 				"Branch":
 					addon.Branch = child.get_text(1)
 				"Upstream Path":
 					addon.UpstreamPath = child.get_text(1)
 				"Project Path":
 					addon.ProjectPath = child.get_text(1)
+		addon.Enabled = config.GetByName(addon.Name).Enabled if config.GetByName(addon.Name) != null else false
 		addons.append(addon)
 	
 	config.Addons = addons
 	_save_config()
+	call_deferred("_build_tree")
 	pass
 
 func _tree_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	_info("%d" % id)
+	Logs._dminor("Action ID: %d" % id)
+	var idx: int = item.get_meta("index", -1) as int
 	match id:
 		AddonConfig.TREE_BUTTONS.APPLY_ALL:
 			_integrate()
 		AddonConfig.TREE_BUTTONS.APPLY_ONE:
-			var idx: int = item.get_meta("index", -1) as int
 			if idx == -1:
 				push_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()])
-				_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
+				Logs._error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
 				return
+			_load_config()
 			var addon: AddonConfig = config.Addons[idx]
-			_info("Run integration on one addon: %s" % [addon.Name])
+			Logs._info("Run integration on one addon: %s" % [addon.Name])
 			_integrate_one(addon, true)
 		AddonConfig.TREE_BUTTONS.DELETE_ONE:
-			_info("Delete one addon")
+			if idx == -1:
+				push_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()])
+				Logs._error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
+				return
+			var addon: AddonConfig = config.Addons[idx]
+			Logs._info("Removing %s from configuration" % [ addon.Name ])
+			config.Addons.remove_at(idx)
+			_save_config()
+		AddonConfig.TREE_BUTTONS.PAUSE_ONE:
+			if idx == -1:
+				push_error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()])
+				Logs._error("Index %d is out of bounds, max: %d" % [idx, config.Addons.size()], ERR_DOES_NOT_EXIST)
+				return
+			var addon: AddonConfig = config.Addons[idx]
+			config.Addons[idx].Enabled = !config.Addons[idx].Enabled
+			_save_config()
+
+func _tree_collapsed(item: TreeItem) -> void:
+	var item_name: String = item.get_meta("name", "")
+	var item_index: int = item.get_meta("index", -1)
+	if item_name == "" or item_index == -1:
+		return
+	var addon: AddonConfig = config.Addons[item_index]
+	addon.Hidden = item.collapsed
+	_save_config()
+
+	pass
 
 func _new_addon() -> void:
 	config.New()
-	_build_tree()
+	call_deferred("_build_tree")
 
 func _build_tree() -> void:
 	tree.clear()
@@ -132,140 +160,236 @@ func _build_tree() -> void:
 	var tree_index: int = 0
 
 	for addon in config.Addons:
-		addon.TreeBranch(tree, root, tree_index, remove, integrate)
+		var addon_root: TreeItem = addon.TreeBranch(tree, root, tree_index, remove, integrate, pause_icon)
 		tree_index += 1
 
-func _fetch_addon(url: String, name: String, filepath: String) -> Error:
-	var req: HTTPRequest = HTTPRequest.new()
-	add_child(req)
+## _preflight performs some pre-integration operations to determine if we should continue
+## and set up the temporary directory if it doesn't exist
+func _preflight(addon: AddonConfig, resources: DirAccess) -> Error:
+	if !addon.Enabled:
+		Logs._notice("Skipping %s (disabled)" % [addon.Name])
+		return ERR_SKIP
 
-	
-	var request_error: Error = req.request(url)
-	if request_error != OK:
-		_error("Failed to download %s" % [url], request_error)
-		return request_error
-	
-	_infoi("Awaiting %s..." % [url])
-
-	var response: Array = await req.request_completed
-
-	var result: int = response[0]
-	var response_code: int = response[1]
-	var headers: PackedStringArray = response[2]
-	var body: PackedByteArray = response[3]
-
-	if response_code != 200:
-		_error("Response code (%d) while retrieving addon from upstream. Expected 200 and others unhandled." % [response_code], result)
-		return result
-
-	_successi("Fetched %s. Writing..." % [name])
-
-	var file: FileAccess = FileAccess.open(filepath, FileAccess.WRITE)
-
-	if !file:
-		_error("Failed to create file %s" % [filepath], file.get_open_error())
-		return file.get_open_error()
-	
-	file.store_buffer(body)
-	file.close()
-	return OK
-
-
-func _integrate_one(addon: AddonConfig, single: bool) -> Error:
-	var resources: DirAccess = DirAccess.open("res://")
 	var tmp_err: Error = resources.make_dir_recursive(tmp_dir)
 	if tmp_err != OK:
-		_error("Failed to create temp directory for integration run", tmp_err)
+		Logs._error("Failed to create temporary directory [%s] for integration run" % [tmp_err], tmp_err)
 		return tmp_err
+	
+	return OK
+
+## _integrate_one performs an integration play on a single addon
+func _integrate_one(addon: AddonConfig, single: bool) -> Error:
+	var continuing: bool = true
+	var resources: DirAccess = DirAccess.open("res://")
+	if resources == null:
+		var failed: Error = DirAccess.get_open_error()
+		return failed
+
+	var preflight_err: Error = _preflight(addon, resources)
+	if preflight_err != OK:
+		return preflight_err
+
+	Logs._info("Integrating addon: %s" % [addon.Name])
+
+	var gd: GitDownloader = GitDownloader.new()
+	add_child(gd)
+
+	var commit_hash: String = await gd.get_commit_hash(addon)
+	if commit_hash == "":
+		return ERR_QUERY_FAILED
+
+	Logs._infoi("Found %s:%s: fetched hash [%s]" % [addon.Repo, addon.Branch, commit_hash])
 
 	if resources.dir_exists(addon.ProjectPath):
-		if !addon.Update:
-			_note("Skipping %s (Update On Apply: false)" % [addon.Name])
-			return ERR_ALREADY_EXISTS
+		if addon.LastInjectedGitHash != "":
+			if addon.LastInjectedGitHash == commit_hash:
+				if !addon.Update:
+					Logs._noticei("Addon already exists at commit hash %s and Update is false. Skipping" % [commit_hash])
+					continuing = false
 
-	_info("Integrating addon: %s" % [addon.Name])
+	if continuing:
 
+		var file_target: String = "%s/%s.zip" % [tmp_dir, commit_hash]
+
+		if not resources.file_exists(file_target):
+
+			var download_error: Error = await gd.get_archive(addon, "res://%s" % [file_target])
+			if download_error != OK:
+				return download_error
+			Logs._infoi("Fetched %s:%s@%s. Saved to %s" % [addon.Repo, addon.Branch, commit_hash, file_target])
+		else:
+			Logs._infoi("Already exists: [%s] - requirement met" % [file_target])
+
+		gd.queue_free()
 	
-	var download_name: String = "%s-%s" % [addon.Name, addon.Branch]
-	var download_url: String = "%s/archive/%s.zip" % [addon.Repo, addon.Branch]
-	var archive_name: String = "%s.zip" % [download_name]
-	var repo_name: String = addon.Repo.rsplit("/", true, 1)[1]
-	var internal_zip_prefix: String = "%s-%s" % [repo_name, addon.Branch]
-	var archive_path: String = "%s/%s" % [tmp_dir, archive_name]
+		Logs._infoi("Injecting [%s -> %s]" % [addon.UpstreamPath, addon.ProjectPath])
+		
+		var zip_reader: ZIPReader = ZIPReader.new()
+		var zip_err: Error = zip_reader.open(file_target)
+		if zip_err != OK:
+			Logs._error("Failed to open zip file: %s" % [file_target], zip_err)
+			return zip_err
+		
+		var wrote_dir_count: int = 0
+		var wrote_file_count: int = 0
 
-	if !resources.file_exists(archive_path):
-		var fetch_err: Error = await _fetch_addon(download_url, archive_name, archive_path)
-		if fetch_err != OK:
-			return fetch_err
-	
-	_successi("Injecting addon [%s -> %s]" % [addon.UpstreamPath, addon.ProjectPath])
+		var tmp_unpack_dir: String = "%s%s" % [tmp_dir, commit_hash]
+		var inject_path: String = "res://%s" % [addon.ProjectPath]
 
-	var zip_reader: ZIPReader = ZIPReader.new()
-	var zip_err: Error = zip_reader.open(archive_path)
-	if zip_err != OK:
-		_error("Failed to unpack %s.", zip_err)
-		zip_reader.close()
-		return zip_err
-	
-	var wrote_directory_count: int = 0
-	var wrote_file_count: int = 0
-
-	for archived_file: String in zip_reader.get_files():
-		if archived_file.contains(addon.UpstreamPath):
-
-			var internal_path: String = archived_file.trim_prefix(internal_zip_prefix).trim_prefix("/")
-			var diff_path: String = internal_path.trim_prefix(addon.UpstreamPath).trim_prefix("/")
-			var resource_path: String = "res://%s/%s" % [addon.ProjectPath, diff_path]
-
-			if archived_file.ends_with("/"):		
-				_infoi("Creating %s" % [resource_path])
-				var mkdir_err: Error = resources.make_dir_recursive(resource_path)
-				if mkdir_err != OK:
-					_error("Failed to create addon dir: %s" % [resource_path], mkdir_err)
-					zip_reader.close()
-					return mkdir_err
-				wrote_directory_count += 1
+		for archived_file: String in zip_reader.get_files():
+			var prefix: String = "%s-%s/" % [addon.RepoName(), addon.Branch]
+			var zip_path_internal: String = archived_file.trim_prefix(prefix)
+		
+			if !zip_path_internal.begins_with(addon.UpstreamPath):
 				continue
-			
-			var writer: FileAccess = FileAccess.open(resource_path, FileAccess.WRITE)
-			writer.store_buffer(zip_reader.read_file(archived_file))
-			writer.close()
-			wrote_file_count += 1
+			else:
+				var trimmed: String = zip_path_internal.trim_prefix(addon.UpstreamPath).trim_prefix("/")
+				var resource_path: String = "%s/%s" % [tmp_unpack_dir, trimmed]
 
-	zip_reader.close()
-	_infoi("Wrote %d directories & %d files." % [wrote_directory_count, wrote_file_count])
+				if zip_path_internal.ends_with("/"):
+					Logs._infoi("Creating %s" % [resource_path])
+					var mkdir_err: Error = resources.make_dir_recursive(resource_path)
+					if mkdir_err != OK:
+						zip_reader.close()
+						return mkdir_err
+					wrote_dir_count += 1
+					continue
+				
+				var writer: FileAccess = FileAccess.open(resource_path, FileAccess.WRITE)
+				if writer == null:
+					var writer_open_err: Error = FileAccess.get_open_error()
+					Logs._error("Failed to open file for writing: %s" % [resource_path], writer_open_err)
+					return writer_open_err
+				writer.store_buffer(zip_reader.read_file(archived_file))
+				writer.close()
+
+				wrote_file_count += 1
+		
+		var zip_close: Error = await zip_reader.close()
+		if zip_close != OK:
+			Logs._error("Failed to close zip file reference: %s" % [file_target], zip_close)
+
+		Logs._infoi("Wrote %d directories and %d files." % [wrote_dir_count, wrote_file_count])
+
+		if resources.dir_exists(addon.ProjectPath):
+			Logs._infoi("Removing %s to replace with %s" % [addon.ProjectPath, tmp_unpack_dir])
+			var err: Error = await _clean(addon.ProjectPath)
+			if err != OK:
+				Logs._error("Failed to remove existing addon %s during integration preparation" % [addon.ProjectPath], err)
+				return err
+
+		var mkdir_pp: Error = await resources.make_dir_recursive(addon.ProjectPath)
+		if mkdir_pp != OK:
+			Logs._error("Failed to make %s" % [addon.ProjectPath], mkdir_pp)
+
+
+		# I know this seems counter intuitive
+		# basically the docs claim it will overwrite an existing target
+		# but it doesn't, it silently fails without error and halts execution
+		# so we recursively create ProjectPath, then delete it to delete only
+		# the last dir in the chain so that rename can take its place
+		var remove_dir: Error = resources.remove(addon.ProjectPath)
+		if remove_dir != OK:
+			Logs._error("Failed deleting %s during preparation" % [addon.ProjectPath], remove_dir)
+
+		Logs._infoi("Moving addon into place [res://%s/ -> %s]" % [tmp_unpack_dir, addon.ProjectPath])
+		
+
+		var rename_err: Error = resources.rename(tmp_unpack_dir, addon.ProjectPath)
+		if rename_err != OK:
+			return rename_err
+		
+		Logs._infoi("Installed addon. Cleaning up.")
+		var addon_index: int = config.IndexByName(addon.Name)
+		if addon_index == -1:
+			Logs._error("Could not find addon being actioned! %s" % [addon.Name], ERR_DOES_NOT_EXIST)
+
+		Logs._minori("Adding %s to addon definition" % [commit_hash])
+		addon.LastInjectedGitHash = commit_hash
+		Logs._minori("Added %s to %s" % [config.Addons[addon_index].LastInjectedGitHash, addon.Name])
+		config.Addons[addon_index] = addon
+
+
+		_save_config()
 
 	if single:
-		_clean()
+		var clean_err: Error = await _clean()
+		if clean_err != OK:
+			return clean_err
 
-	_success("Done: %s" % [addon.Name])
+		_save_backup_config()
+
 	return OK
 
 
 func _integrate() -> void:
-	_info("Beginning integration run with %d addons" % [config.Addons.size()])
+	Logs._info("Beginning integration run with %d addons" % [config.Addons.size()])
 
+	run_lock.lock()
 	for addon in config.Addons:
-		await _integrate_one(addon, false)
+		var integrate_err: Error = await _integrate_one(addon, false)
+		Logs._info("Addon %s complete: %s" % [addon.Name, error_string(integrate_err)])
+	run_lock.unlock()
 
-	_clean()
+	var err: Error = await _clean()
+	if err != OK:
+		Logs._error("Failed on cleanup step", err)
+	_save_backup_config()
 
-	_success("Done with integration run.")
+	Logs._success("Done with integration run.")
 
-func _clean() -> void:
-	_note("Cleaning up res://%s..." % [tmp_dir])
-	var temp_addons: DirAccess = DirAccess.open(tmp_dir)
-	for file in temp_addons.get_files():
-		var rem_err: Error = temp_addons.remove(file)
-		if rem_err != OK:
-			_error("Failed to remove temp file %s" % [file], rem_err)
-
+func _clean(path: String = tmp_dir) -> Error:
+	Logs._notice("Cleaning up res://%s..." % [path])
 	var resources: DirAccess = DirAccess.open("res://")
-	var clean_err: Error = resources.remove(tmp_dir)
-	if clean_err != OK:
-		_error("Failed to remove temp directory", clean_err)
 
-func _trim_zip_path_root(path: String) -> String:
-	var split: Array[String] = path.split("/")
-	split.remove_at(0)
-	return "/".join(split)
+	var clean: Error = _recursively_clean_directory(resources, path)
+	if clean != OK:
+		Logs._error("Failed to clean: %s" % [path], clean)
+		return clean
+
+	resources.change_dir("res://")
+	var clean_err: Error = resources.remove("res://%s" % [path])
+	if clean_err != OK:
+		Logs._error("Failed to remove parent dir res://%s" % [path], clean_err)
+		return clean_err
+	return OK
+
+func _recursively_clean_directory(hero: DirAccess, path: String) -> Error:
+	var res: String = "%s%s" % ["" if path.begins_with("res://") else "res://", path]
+	var ch_err: Error = hero.change_dir(res)
+	if ch_err != OK:
+		Logs._error("Failed to change directory from %s to %s" % [hero.get_current_dir(false), res], ch_err)
+		return ch_err
+	
+	var dirs: Array = hero.get_directories()
+	var files: Array = hero.get_files()
+
+	for dir in dirs:
+		var this_resource: String = "%s/%s" % [res, dir]
+		Logs._notice("Cleaning out %s" % [this_resource])
+		var child_err: Error = _recursively_clean_directory(hero, this_resource)
+		if child_err != OK:
+			Logs._error("Failed to remove child %s" % [this_resource], child_err)
+			continue
+		
+		var rm_child_dir: Error = hero.change_dir("res://")
+		if rm_child_dir != OK:
+			Logs._error("Failed to move up one from %s" % [this_resource], rm_child_dir)
+			continue
+		
+		var rm: Error = hero.remove(this_resource)
+		if rm != OK:
+			Logs._error("Failed to remove child dir %s" % [this_resource], rm)
+			continue
+		
+	
+	
+	for file in files:
+		var this_resource: String = "%s/%s" % [res, file]
+		var rm_file_err: Error = hero.remove(this_resource)
+		if rm_file_err != OK:
+			Logs._error("Failed to remove %s" % [this_resource], rm_file_err)
+			continue
+
+	return OK
+
