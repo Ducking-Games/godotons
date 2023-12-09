@@ -30,11 +30,6 @@ layout_mode = 2
 layout_mode = 2
 text = "Save"
 
-[node name="Load" type="Button" parent="VBox/HBoxContainer"]
-layout_mode = 2
-text = "Load
-"
-
 [node name="LoadBackup" type="Button" parent="VBox/HBoxContainer"]
 layout_mode = 2
 text = "Load from Backup
@@ -55,6 +50,5 @@ size_flags_vertical = 3
 columns = 2
 
 [connection signal="pressed" from="VBox/HBoxContainer/Save" to="." method="_save_config"]
-[connection signal="pressed" from="VBox/HBoxContainer/Load" to="." method="_load_config"]
 [connection signal="pressed" from="VBox/HBoxContainer/LoadBackup" to="." method="_load_backup_config"]
 [connection signal="pressed" from="VBox/HBoxContainer/Add" to="." method="_new_addon"]

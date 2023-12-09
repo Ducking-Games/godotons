@@ -16,8 +16,8 @@ however I am curious to have people try it out and suggest improvements or other
 enhancements / PRs.
 
 <p align="center">
-<img src="static/editor_dock.png" width=200 height=500/>
-<img src="static/integration2.png" width=500 />
+<img src="static/editor_dock_020.png" width=400 height=500/>
+<img src="static/integration_020.png" width=500 />
 </p>
 
 # Installation
@@ -44,13 +44,17 @@ Enable the addon and never manually install or update an addon again (hopefully)
 [godotons]
 
 name="godotons"
+hidden=false
+enabled=true
 update=true
-repo="https://github.com/Ducking-Games/godotons"
+origin="github"
+origin_override=""
+repo="Ducking-Games/godotons"
 branch="main"
 upstream_path="addons/godotons"
 project_path="addons/godotons"
 ```
-
+TODO: Update below from 0.1.0 to 0.20 output
 ```
 Run integration on one addon: godotons
 Integrating addon: godotons
