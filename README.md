@@ -85,7 +85,12 @@ Enable the plugin and then use the Godotons Dock to add remote sources.
         * Toggled via the Power button on the addon
         * Use to disable an addon in Godotons without removing it from the config
     * Update on Apply
-        * Whether or not to download and inject if the directory already exists
+        * Whether or not to download and inject if the directory already exists and the latest commit hash was installed
+    * Origin
+        * Upstream provider
+        * Only supports github right now (gitlab soon)
+    * OriginOverride
+        * can be ignored for now - will be used to support enterprise installs with custom URLs
     * Repo
         * The remote git repo from which to inject (only tested against github public repos)
         * in the form of owner/repo (ex. `Ducking-Games/godotons`)
@@ -111,7 +116,7 @@ The red X button will delete the addon.
 # Planned Features
 
 - [X] Clean up and handle errors/messaging better for Asset Store release
-- [ ] Compare local hash with repo somehow before downloading to save on API requests / data transfer
+- [X] Compare local hash with repo somehow before downloading to save on API requests / data transfer
 - [X] Ignore option to skip an addon for apply runs
 - [X] Ability to apply single addon or all addons
 - [ ] Investigate threading the apply step.
@@ -132,6 +137,7 @@ The red X button will delete the addon.
     * Save/Load behavior may change
 * Known Issues
     * Won't gracefully handle config schema changes. Need to implement some schema version or something to prevent it blowning up on Godoton addon updates.
+    * Cannot fetch from repo root directories, must be in a subdirectory
 
 # Contributing
 We are open to contributions with no particular style guide defined yet as the project is in early development.
