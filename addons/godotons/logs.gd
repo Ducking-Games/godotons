@@ -32,7 +32,7 @@ static func _error(message: String, err: Error) -> void:
 	print_rich("[godotons] [color=red]%s: %d (%s)" % [message, err, error_string(err)])
 
 static func _dinfo(message: String) -> void:
-	var debug_enabled: bool = ProjectSettings.get_setting("godotons/enable_debug_logging")
+	var debug_enabled: bool = ProjectSettings.get_setting("godotons/enable_debug_logging", false)
 	if debug_enabled:
 		_info(message)
 
@@ -40,7 +40,7 @@ static func _dinfoi(message: String) -> void:
 	_dinfo("    %s" % [message])
 
 static func _dnotice(message: String) -> void:
-	var debug_enabled: bool = ProjectSettings.get_setting("godotons/enable_debug_logging")
+	var debug_enabled: bool = ProjectSettings.get_setting("godotons/enable_debug_logging", false)
 	if debug_enabled:
 		_notice(message)
 
@@ -48,7 +48,7 @@ static func _dnoticei(message: String) -> void:
 	_dnotice("    %s" % [message])
 
 static func _dminor(message: String) -> void:
-	var debug_enabled: bool = ProjectSettings.get_setting("godotons/enable_debug_logging")
+	var debug_enabled: bool = ProjectSettings.get_setting("godotons/enable_debug_logging", false)
 	if debug_enabled:
 		_minor(message)
 
