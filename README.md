@@ -1,6 +1,8 @@
 # Godotons
 ![Static Badge](https://img.shields.io/badge/Godot-4.2%2B-Green) ![Static Badge](https://img.shields.io/badge/Source-GDScript-Green) ![Static Badge](https://img.shields.io/badge/Sponsor-Ducking%20Games-Green)
 
+> [!WARNING]
+> Godotons was an experiment. Development is continuing under a new name: [GPlug](https://github.com/Ducking-Games/gplug) with a ground up refactor and rewrite.
 
 A godot addon in pure GDScript for managing out of band (not in asset-lib) Libraries in Godot 4.2+
 
